@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\buildMultiTargeting\Sondarr.Auth.Api.props" />
+</Project>

@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "fir/I259r2UZj1ZTdYHrsshPe+tBg4HXnwyhYoR04Rg=",
+  "Source": "Sondarr.Auth.Api",
+  "BasePath": "_content/Sondarr.Auth.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

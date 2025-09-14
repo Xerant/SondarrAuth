@@ -1,0 +1,12 @@
+D:\Projects\Sondarr\SondarrAuth\Sondarr.Auth.Shared\obj\Debug\net8.0\Sondarr.Auth.Shared.csproj.AssemblyReference.cache
+D:\Projects\Sondarr\SondarrAuth\Sondarr.Auth.Shared\obj\Debug\net8.0\Sondarr.Auth.Shared.GeneratedMSBuildEditorConfig.editorconfig
+D:\Projects\Sondarr\SondarrAuth\Sondarr.Auth.Shared\obj\Debug\net8.0\Sondarr.Auth.Shared.AssemblyInfoInputs.cache
+D:\Projects\Sondarr\SondarrAuth\Sondarr.Auth.Shared\obj\Debug\net8.0\Sondarr.Auth.Shared.AssemblyInfo.cs
+D:\Projects\Sondarr\SondarrAuth\Sondarr.Auth.Shared\obj\Debug\net8.0\Sondarr.Auth.Shared.csproj.CoreCompileInputs.cache
+D:\Projects\Sondarr\SondarrAuth\Sondarr.Auth.Shared\bin\Debug\net8.0\Sondarr.Auth.Shared.deps.json
+D:\Projects\Sondarr\SondarrAuth\Sondarr.Auth.Shared\bin\Debug\net8.0\Sondarr.Auth.Shared.dll
+D:\Projects\Sondarr\SondarrAuth\Sondarr.Auth.Shared\bin\Debug\net8.0\Sondarr.Auth.Shared.pdb
+D:\Projects\Sondarr\SondarrAuth\Sondarr.Auth.Shared\obj\Debug\net8.0\Sondarr.Auth.Shared.dll
+D:\Projects\Sondarr\SondarrAuth\Sondarr.Auth.Shared\obj\Debug\net8.0\refint\Sondarr.Auth.Shared.dll
+D:\Projects\Sondarr\SondarrAuth\Sondarr.Auth.Shared\obj\Debug\net8.0\Sondarr.Auth.Shared.pdb
+D:\Projects\Sondarr\SondarrAuth\Sondarr.Auth.Shared\obj\Debug\net8.0\ref\Sondarr.Auth.Shared.dll
