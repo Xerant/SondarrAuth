@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyDescriptionAttribute(("Shared authentication components for Sondarr microservices architecture with Supa" +
     "base JWT validation."))]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+44346526d2ec116c23e28ba3b620d9f2d2a1fc20")]
 [assembly: System.Reflection.AssemblyProductAttribute("Sondarr.Auth.Shared")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Sondarr.Auth.Shared")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
