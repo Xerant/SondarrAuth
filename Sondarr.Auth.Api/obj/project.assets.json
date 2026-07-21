@@ -336,7 +336,7 @@
           }
         }
       },
-      "Sondarr.Auth.Shared/1.0.0": {
+      "Sondarr.Auth.Shared/2.1.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
@@ -352,7 +352,10 @@
         },
         "runtime": {
           "bin/placeholder/Sondarr.Auth.Shared.dll": {}
-        }
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
       }
     }
   },
@@ -1020,7 +1023,7 @@
         "version.txt"
       ]
     },
-    "Sondarr.Auth.Shared/1.0.0": {
+    "Sondarr.Auth.Shared/2.1.0": {
       "type": "project",
       "path": "../Sondarr.Auth.Shared/Sondarr.Auth.Shared.csproj",
       "msbuildProject": "../Sondarr.Auth.Shared/Sondarr.Auth.Shared.csproj"
@@ -1029,7 +1032,7 @@
   "projectFileDependencyGroups": {
     "net8.0": [
       "Microsoft.AspNetCore.OpenApi >= 8.0.0",
-      "Sondarr.Auth.Shared >= 1.0.0",
+      "Sondarr.Auth.Shared >= 2.1.0",
       "Swashbuckle.AspNetCore >= 6.5.0"
     ]
   },

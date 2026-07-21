@@ -45,3 +45,4 @@ D:\Projects\Sondarr\SondarrAuth\Sondarr.Auth.Api\obj\Debug\net8.0\refint\Sondarr
 D:\Projects\Sondarr\SondarrAuth\Sondarr.Auth.Api\obj\Debug\net8.0\Sondarr.Auth.Api.pdb
 D:\Projects\Sondarr\SondarrAuth\Sondarr.Auth.Api\obj\Debug\net8.0\Sondarr.Auth.Api.genruntimeconfig.cache
 D:\Projects\Sondarr\SondarrAuth\Sondarr.Auth.Api\obj\Debug\net8.0\ref\Sondarr.Auth.Api.dll
+D:\Projects\Sondarr\SondarrAuth\Sondarr.Auth.Api\obj\Debug\net8.0\Sondarr.Auth.Api.sourcelink.json

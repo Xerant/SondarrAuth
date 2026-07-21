@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using Sondarr.Auth.Api.Models;
 using Sondarr.Auth.Shared.Models;
 using Sondarr.Auth.Shared.Services;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Sondarr.Auth.Api.Controllers
 {
@@ -16,16 +18,19 @@ namespace Sondarr.Auth.Api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IUserContextService _userContextService;
+        private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
 
         /// <summary>
         /// Initializes a new instance of the AuthController class.
         /// </summary>
         /// <param name="userContextService">The user context service for accessing current user information.</param>
+        /// <param name="configuration">The application configuration, used to validate arbitrary tokens against Supabase settings.</param>
         /// <param name="logger">The logger for recording authentication events.</param>
-        public AuthController(IUserContextService userContextService, ILogger<AuthController> logger)
+        public AuthController(IUserContextService userContextService, IConfiguration configuration, ILogger<AuthController> logger)
         {
             _userContextService = userContextService ?? throw new ArgumentNullException(nameof(userContextService));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -81,17 +86,51 @@ namespace Sondarr.Auth.Api.Controllers
                     return BadRequest(ValidateTokenResponse.FailureResponse("Token is required"));
                 }
 
-                // Note: In a real implementation, you would validate the token here
-                // For now, we'll return a placeholder response
-                // This would typically involve:
-                // 1. Parsing the JWT token
-                // 2. Validating the signature using Supabase JWT secret
-                // 3. Checking expiration and other claims
-                // 4. Extracting user information from claims
+                var validationParameters = Sondarr.Auth.Shared.SupabaseAuthenticationExtensions.CreateTokenValidationParameters(_configuration);
 
-                _logger.LogInformation("Token validation requested");
+                // JwtSecurityTokenHandler remaps short claim types (e.g. "sub" -> a long
+                // XML-namespace URI) by default. Disable that so claim types here match
+                // what UserContext.FromClaims() and the JwtBearer middleware both expect.
+                var handler = new JwtSecurityTokenHandler { MapInboundClaims = false };
 
-                return Ok(ValidateTokenResponse.FailureResponse("Token validation not implemented in this example. Use the shared library for JWT validation in your microservices."));
+                var principal = handler.ValidateToken(request.Token, validationParameters, out _);
+                var userContext = UserContext.FromClaims(principal.Claims);
+                var userInfo = MapToUserInfo(userContext);
+
+                _logger.LogInformation("Token validated successfully for user {UserId}", userContext.UserId);
+
+                return Ok(ValidateTokenResponse.SuccessResponse(userInfo));
+            }
+            catch (SecurityTokenExpiredException)
+            {
+                _logger.LogInformation("Token validation failed: token expired");
+                return Ok(ValidateTokenResponse.FailureResponse("Token has expired"));
+            }
+            catch (SecurityTokenInvalidSignatureException)
+            {
+                _logger.LogWarning("Token validation failed: invalid signature");
+                return Ok(ValidateTokenResponse.FailureResponse("Token signature is invalid"));
+            }
+            catch (SecurityTokenInvalidIssuerException)
+            {
+                _logger.LogInformation("Token validation failed: invalid issuer");
+                return Ok(ValidateTokenResponse.FailureResponse("Token issuer is invalid"));
+            }
+            catch (SecurityTokenInvalidAudienceException)
+            {
+                _logger.LogInformation("Token validation failed: invalid audience");
+                return Ok(ValidateTokenResponse.FailureResponse("Token audience is invalid"));
+            }
+            catch (SecurityTokenException ex)
+            {
+                _logger.LogInformation(ex, "Token validation failed");
+                return Ok(ValidateTokenResponse.FailureResponse("Token is invalid"));
+            }
+            catch (ArgumentException ex)
+            {
+                // Thrown by the handler when the token string is not a well-formed JWT.
+                _logger.LogInformation(ex, "Token validation failed: malformed token");
+                return Ok(ValidateTokenResponse.FailureResponse("Token is malformed"));
             }
             catch (Exception ex)
             {

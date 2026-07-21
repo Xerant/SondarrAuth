@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace Sondarr.Auth.Shared.Models
 {
@@ -47,7 +48,10 @@ namespace Sondarr.Auth.Shared.Models
         public string? AvatarUrl { get; set; }
 
         /// <summary>
-        /// Gets or sets the user's roles from the JWT 'role' claim.
+        /// Gets or sets the user's application roles from the JWT 'user_role' claim.
+        /// Populated by the Supabase Custom Access Token Hook from `public.profiles.role`.
+        /// Not to be confused with the JWT's standard 'role' claim, which is always
+        /// "authenticated" (the Postgres role Supabase/PostgREST uses for RLS).
         /// </summary>
         public IList<string> Roles { get; set; } = new List<string>();
 
@@ -83,8 +87,10 @@ namespace Sondarr.Auth.Shared.Models
 
         /// <summary>
         /// Gets or sets additional custom claims that are not part of the standard properties.
+        /// Values that are valid JSON (objects, arrays, numbers, booleans) are parsed into a
+        /// <see cref="JsonElement"/>; everything else is kept as the raw string claim value.
         /// </summary>
-        public IDictionary<string, string> CustomClaims { get; set; } = new Dictionary<string, string>();
+        public IDictionary<string, object> CustomClaims { get; set; } = new Dictionary<string, object>();
 
         /// <summary>
         /// Creates a UserContext instance from a collection of JWT claims.
@@ -110,10 +116,12 @@ namespace Sondarr.Auth.Shared.Models
             userContext.EmailVerified = bool.TryParse(claimsList.FirstOrDefault(c => c.Type == "email_verified")?.Value, out var emailVerified) && emailVerified;
             userContext.PhoneVerified = bool.TryParse(claimsList.FirstOrDefault(c => c.Type == "phone_verified")?.Value, out var phoneVerified) && phoneVerified;
 
-            // Extract role claims
+            // Extract application roles. Supabase's standard "role" claim is always
+            // "authenticated" (the Postgres role) -- app roles come from the
+            // "user_role" claim added by the Custom Access Token Hook.
             userContext.Roles = claimsList
-                .Where(c => c.Type == "role" || c.Type == ClaimTypes.Role)
-                .Select(c => c.Value)
+                .Where(c => c.Type == "user_role")
+                .SelectMany(c => c.Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                 .ToList();
 
             // Extract datetime claims
@@ -136,15 +144,33 @@ namespace Sondarr.Auth.Shared.Models
             var standardClaimTypes = new HashSet<string>
             {
                 "sub", "email", "phone", "name", "picture", "iss", "aud", "jti",
-                "email_verified", "phone_verified", "role", "exp", "iat", "nbf",
+                "email_verified", "phone_verified", "role", "user_role", "exp", "iat", "nbf",
                 ClaimTypes.Role
             };
 
             userContext.CustomClaims = claimsList
                 .Where(c => !standardClaimTypes.Contains(c.Type))
-                .ToDictionary(c => c.Type, c => c.Value);
+                .ToDictionary(c => c.Type, c => ParseClaimValue(c.Value));
 
             return userContext;
+        }
+
+        /// <summary>
+        /// Parses a claim's string value as JSON when possible, preserving the original
+        /// type (object, array, number, boolean) instead of collapsing it to a string.
+        /// Falls back to the raw string when the value is not valid JSON.
+        /// </summary>
+        private static object ParseClaimValue(string value)
+        {
+            try
+            {
+                using var document = JsonDocument.Parse(value);
+                return document.RootElement.Clone();
+            }
+            catch (JsonException)
+            {
+                return value;
+            }
         }
 
         /// <summary>

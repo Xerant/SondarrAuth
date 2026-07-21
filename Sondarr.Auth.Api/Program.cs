@@ -56,12 +56,6 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Add Supabase JWT authentication
-builder.Services.AddSupabaseAuthentication(builder.Configuration);
-
-// Add Sondarr Auth services
-builder.Services.AddSondarrAuthServices();
-
 // Add CORS for microservices communication
 builder.Services.AddCors(options =>
 {
@@ -100,6 +94,11 @@ app.UseAuthorization();
 
 // Map controllers
 app.MapControllers();
+
+// Cross-site session cookie endpoints (POST /auth/session, POST /auth/logout) -- see
+// Sondarr.Auth.Shared/SessionEndpointExtensions.cs. Any Sondarr site can mount these
+// the same way to become a valid place to establish the shared-parent-domain session.
+app.MapSondarrSessionEndpoints(builder.Configuration);
 
 // Add health check endpoint
 app.MapGet("/health", () => new

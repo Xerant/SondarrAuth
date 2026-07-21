@@ -6,7 +6,7 @@
     <authors>Sondarr Team</authors>
     <description>Shared authentication components for Sondarr microservices architecture with Supabase JWT validation.</description>
     <tags>authentication jwt supabase microservices auth</tags>
-    <repository type="git" />
+    <repository type="git" commit="f708e97d1eb1e846101798a746dddb4f69a69adf" />
     <dependencies>
       <group targetFramework="net8.0">
         <dependency id="Microsoft.AspNetCore.Authentication.JwtBearer" version="8.0.0" exclude="Build,Analyzers" />

@@ -26,43 +26,49 @@ namespace Sondarr.Auth.Shared
         /// <exception cref="InvalidOperationException">Thrown when Supabase JWT Secret is not configured.</exception>
         public static IServiceCollection AddSupabaseAuthentication(this IServiceCollection services, IConfiguration configuration)
         {
-            var supabaseConfig = configuration.GetSection("Supabase");
+            return services.AddSupabaseAuthentication(configuration, "Supabase");
+        }
+
+        /// <summary>
+        /// Builds the <see cref="TokenValidationParameters"/> used to validate Supabase-issued JWTs,
+        /// reading the JWT secret, issuer, and audience from the given configuration section.
+        /// Useful for validating an arbitrary token string outside of the ASP.NET Core JWT Bearer
+        /// pipeline (e.g. a "validate this token for me" utility endpoint).
+        /// </summary>
+        /// <param name="configuration">The application configuration containing Supabase settings.</param>
+        /// <param name="sectionName">The configuration section name containing Supabase settings.</param>
+        /// <returns>Token validation parameters matching the rules used by <see cref="AddSupabaseAuthentication(IServiceCollection, IConfiguration)"/>.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when Supabase JWT Secret is not configured.</exception>
+        public static TokenValidationParameters CreateTokenValidationParameters(IConfiguration configuration, string sectionName = "Supabase")
+        {
+            var supabaseConfig = configuration.GetSection(sectionName);
             var jwtSecret = supabaseConfig["JwtSecret"];
 
             if (string.IsNullOrEmpty(jwtSecret))
             {
-                throw new InvalidOperationException("Supabase JWT Secret is not configured. Please check your settings.");
+                throw new InvalidOperationException($"Supabase JWT Secret is not configured in section '{sectionName}'. Please check your settings.");
             }
 
-            services.AddAuthentication(options =>
+            return new TokenValidationParameters
             {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            }).AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    // Validates the signing key against the configured Supabase JWT secret.
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+                // Validates the signing key against the configured Supabase JWT secret.
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
 
-                    // Validates that the "iss" (issuer) claim is the expected Supabase URL.
-                    ValidateIssuer = true,
-                    ValidIssuer = supabaseConfig["Issuer"],
+                // Validates that the "iss" (issuer) claim is the expected Supabase URL.
+                ValidateIssuer = true,
+                ValidIssuer = supabaseConfig["Issuer"],
 
-                    // Validates that the "aud" (audience) claim is the expected value.
-                    ValidateAudience = true,
-                    ValidAudience = supabaseConfig["Audience"],
+                // Validates that the "aud" (audience) claim is the expected value.
+                ValidateAudience = true,
+                ValidAudience = supabaseConfig["Audience"],
 
-                    // Validates the token's expiration.
-                    ValidateLifetime = true,
+                // Validates the token's expiration.
+                ValidateLifetime = true,
 
-                    // Ensures there is no clock skew. Recommended for security.
-                    ClockSkew = TimeSpan.Zero
-                };
-            });
-
-            return services;
+                // Ensures there is no clock skew. Recommended for security.
+                ClockSkew = TimeSpan.Zero
+            };
         }
 
         /// <summary>
@@ -76,13 +82,8 @@ namespace Sondarr.Auth.Shared
         /// <exception cref="InvalidOperationException">Thrown when Supabase JWT Secret is not configured.</exception>
         public static IServiceCollection AddSupabaseAuthentication(this IServiceCollection services, IConfiguration configuration, string sectionName)
         {
-            var supabaseConfig = configuration.GetSection(sectionName);
-            var jwtSecret = supabaseConfig["JwtSecret"];
-
-            if (string.IsNullOrEmpty(jwtSecret))
-            {
-                throw new InvalidOperationException($"Supabase JWT Secret is not configured in section '{sectionName}'. Please check your settings.");
-            }
+            var validationParameters = CreateTokenValidationParameters(configuration, sectionName);
+            var cookieName = SondarrAuthCookies.GetCookieName(configuration, sectionName);
 
             services.AddAuthentication(options =>
             {
@@ -90,16 +91,23 @@ namespace Sondarr.Auth.Shared
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             }).AddJwtBearer(options =>
             {
-                options.TokenValidationParameters = new TokenValidationParameters
+                options.TokenValidationParameters = validationParameters;
+                options.Events = new JwtBearerEvents
                 {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-                    ValidateIssuer = true,
-                    ValidIssuer = supabaseConfig["Issuer"],
-                    ValidateAudience = true,
-                    ValidAudience = supabaseConfig["Audience"],
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
+                    // Falls back to the cross-site session cookie (see SessionEndpointExtensions)
+                    // when there's no Authorization header -- lets a browser navigating between
+                    // sites under the shared parent domain stay authenticated without the
+                    // frontend having to manually attach a bearer token.
+                    OnMessageReceived = context =>
+                    {
+                        var hasAuthHeader = !string.IsNullOrEmpty(context.Request.Headers.Authorization.ToString());
+                        if (!hasAuthHeader && context.Request.Cookies.TryGetValue(cookieName, out var cookieToken) && !string.IsNullOrEmpty(cookieToken))
+                        {
+                            context.Token = cookieToken;
+                        }
+
+                        return Task.CompletedTask;
+                    }
                 };
             });
 

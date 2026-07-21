@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Sondarr.Auth.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+202e3d1f57e6a3a6bbe6d0eb3af5cc74f4ebd078")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f708e97d1eb1e846101798a746dddb4f69a69adf")]
 [assembly: System.Reflection.AssemblyProductAttribute("Sondarr.Auth.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Sondarr.Auth.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

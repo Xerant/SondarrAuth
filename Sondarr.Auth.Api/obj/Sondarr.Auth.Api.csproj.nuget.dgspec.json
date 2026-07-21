@@ -99,7 +99,7 @@
       }
     },
     "D:\\Projects\\Sondarr\\SondarrAuth\\Sondarr.Auth.Shared\\Sondarr.Auth.Shared.csproj": {
-      "version": "1.0.0",
+      "version": "2.1.0",
       "restore": {
         "projectUniqueName": "D:\\Projects\\Sondarr\\SondarrAuth\\Sondarr.Auth.Shared\\Sondarr.Auth.Shared.csproj",
         "projectName": "Sondarr.Auth.Shared",
@@ -189,6 +189,9 @@
             }
           ],
           "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }

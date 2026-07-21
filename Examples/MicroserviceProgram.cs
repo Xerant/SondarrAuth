@@ -86,6 +86,13 @@ app.UseAuthorization();
 // Map controllers
 app.MapControllers();
 
+// Cross-site session cookie endpoints (POST /auth/session, POST /auth/logout).
+// Mount these on any site that should be able to establish the shared-parent-domain
+// session cookie (e.g. right after the frontend signs in via the Supabase JS SDK).
+// Every site that just needs to *read* the cookie doesn't need this call -- only
+// AddSupabaseAuthentication() above, which already falls back to the cookie.
+app.MapSondarrSessionEndpoints(builder.Configuration);
+
 // Add health check endpoint
 app.MapGet("/health", () => new
 {
@@ -99,15 +106,39 @@ app.Run();
 
 /*
  * Configuration in appsettings.json:
- * 
+ *
  * {
  *   "Supabase": {
  *     "JwtSecret": "your-supabase-jwt-secret-here",
  *     "Issuer": "https://your-project-ref.supabase.co/auth/v1",
- *     "Audience": "authenticated"
+ *     "Audience": "authenticated",
+ *     "Cookie": {
+ *       "Name": "sb-access-token",
+ *       "Domain": ".sondarr.com",   // omit/empty for local dev -> host-only cookie
+ *       "Secure": "true"            // "false" only for local http dev
+ *     }
  *   }
  * }
- * 
+ *
+ * Cross-site SSO flow (shared parent domain, e.g. *.sondarr.com):
+ *
+ *   1. Frontend signs in via the Supabase JS SDK directly (Supabase is the identity
+ *      server, not this API) and gets back an access token.
+ *   2. Frontend POSTs { "accessToken": "<token>" } to this site's /auth/session.
+ *      The server validates the token against Supabase's JWT settings, then sets an
+ *      HttpOnly, Secure, SameSite=Lax cookie scoped to Domain=".sondarr.com".
+ *   3. Because the cookie's Domain is the shared parent domain, the browser now sends
+ *      it automatically on requests to every other *.sondarr.com site too -- each of
+ *      those sites' AddSupabaseAuthentication() picks it up as a fallback to the
+ *      Authorization header, with no extra login step on that site.
+ *   4. POST /auth/logout clears the cookie (site that set it, or any site sharing the
+ *      same Cookie:Name/Domain config, can clear it -- attributes must match exactly).
+ *
+ * MVP scope: access-token cookie only. The cookie's lifetime matches the JWT's own
+ * expiry (Supabase default ~1hr) -- there's no refresh-token cookie or /auth/refresh
+ * endpoint yet, so the session simply ends and the user signs in again. Token refresh
+ * is a tracked follow-up, not yet implemented.
+ *
  * Usage in controllers:
  * 
  * [ApiController]
