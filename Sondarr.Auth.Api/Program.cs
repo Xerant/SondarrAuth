@@ -3,7 +3,24 @@ using Sondarr.Auth.Shared;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
+builder.Configuration.Sources.Clear();
+builder.Configuration
+.SetBasePath(builder.Environment.ContentRootPath)
+.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+.AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+.AddEnvironmentVariables();
+
+var jwtSecret = builder.Configuration["Supabase:JwtSecret"];
+if (string.IsNullOrEmpty(jwtSecret))
+{
+    throw new InvalidOperationException("CRITICAL ERROR: Supabase JWT Secret is not configured. Please check your settings.");
+}
+
+
 builder.Services.AddControllers();
+builder.Services.AddSupabaseAuthentication(builder.Configuration);
+builder.Services.AddSondarrAuthServices();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
