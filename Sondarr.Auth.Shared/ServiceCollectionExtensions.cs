@@ -3,11 +3,10 @@ using Sondarr.Auth.Shared.Services;
 
 namespace Sondarr.Auth.Shared
 {
-    /// <summary>
     /// Extension methods for configuring Sondarr.Auth.Shared services.
     /// This class provides convenient methods for registering authentication-related services
     /// in the dependency injection container.
-    /// </summary>
+
     public static class ServiceCollectionExtensions
     {
         /// <summary>
