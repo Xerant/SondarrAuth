@@ -1,0 +1,54 @@
+name: Publish NuGet package
+
+on:
+  push:
+    tags:
+      - "v*"          # e.g. v2.1.0 -> publishes Sondarr.Auth.Shared 2.1.0
+  workflow_dispatch:  # manual run publishes the <Version> from the .csproj
+
+permissions:
+  contents: read
+  packages: write     # lets GITHUB_TOKEN push to GitHub Packages
+
+env:
+  PROJECT: Sondarr.Auth.Shared/Sondarr.Auth.Shared.csproj
+  NUGET_SOURCE: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Resolve package version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            echo "args=-p:Version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "args=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Restore
+        run: dotnet restore Sondarr.Auth.sln
+
+      - name: Build
+        run: dotnet build Sondarr.Auth.sln -c Release --no-restore ${{ steps.version.outputs.args }}
+
+      - name: Test
+        run: dotnet test Sondarr.Auth.sln -c Release --no-build
+
+      - name: Pack
+        run: dotnet pack ${{ env.PROJECT }} -c Release --no-build -o ./artifacts ${{ steps.version.outputs.args }}
+
+      - name: Push to GitHub Packages
+        run: >
+          dotnet nuget push "./artifacts/*.nupkg"
+          --source "${{ env.NUGET_SOURCE }}"
+          --api-key "${{ secrets.GITHUB_TOKEN }}"
+          --skip-duplicate
