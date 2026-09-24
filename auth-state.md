@@ -1,6 +1,6 @@
 # SondarrAuth — Current State
 
-**Last updated:** 2026-07-21 | **Status:** 🟡 In Development
+**Last updated:** 2026-09-24 | **Status:** 🟡 In Development
 **Suggested vault location:** `02-backend/`
 
 ---
@@ -9,13 +9,14 @@
 
 | Component                         | Status         | Notes                          |
 | --------------------------------- | -------------- | ------------------------------ |
-| `Sondarr.Auth.Shared` (NuGet lib) | 🟢 Functional  | v2.0.0 — core complete, role claim wiring fixed, tested |
+| `Sondarr.Auth.Shared` (NuGet lib) | 🟢 Functional  | v2.2.0 (unreleased) — adds JWKS/ES256 support; v2.1.0 published |
 | Supabase role claim wiring        | 🟢 Enabled     | Custom Access Token Hook live; `user_role` claim populated from `public.profiles.role` |
 | `Sondarr.Auth.Api` (utility API)  | 🟢 Functional  | validate-token implemented and tested |
 | Cross-site cookie SSO             | 🟢 MVP done    | Shared parent domain (`.sondarr.com`), access-token cookie only, tested |
-| NuGet publish pipeline            | 🔴 Not started | Package metadata ready; no CI/CD to push to GitHub Packages yet |
+| NuGet publish pipeline            | 🟢 Working     | `.github/workflows/publish-nuget.yml` (`9ed82ed`); v2.1.0 published to GitHub Packages via tag |
 | Docker / container config         | 🔴 Not started | No Dockerfile or compose       |
-| Test project                      | 🟢 Done        | `Sondarr.Auth.Shared.Tests` (45) + `Sondarr.Auth.Api.Tests` (6) — 51 xUnit tests, all passing |
+| Consumer adoption                 | 🔴 Not started | No Sondarr service references the package yet (Music, Ticket still hand-roll `AddJwtBearer`) |
+| Test project                      | 🟢 Done        | `Sondarr.Auth.Shared.Tests` (57) + `Sondarr.Auth.Api.Tests` (6) — 63 xUnit tests, all passing |
 
 ---
 
@@ -35,7 +36,27 @@
 - [x] Example controller + Program.cs in `Examples/`
 - [x] NuGet package metadata — `RepositoryUrl`, `PackageProjectUrl`, `PackageReadmeFile` + README.md (no license expression set — internal/private package, not open source)
 - [x] `Sondarr.Auth.Shared.Tests` — xUnit coverage for `UserContext`, `UserContextService`, `RequireRoleAttribute`/`RequireAnyRoleAttribute`, DI extensions, cookie SSO
+- [x] Asymmetric signing keys (v2.2.0) — `SupabaseJwksProvider` (ported from SondarrMusic `StreamingService`) fetches `{Issuer}/.well-known/jwks.json` (override: `JwksUrl`, or derived from `Url`), cached 1hr per URL process-wide, refetched on unknown `kid` (throttled to once per 5 min). `CreateTokenValidationParameters()` resolves keys per token: no `kid` → `JwtSecret`; `kid` → matching JWKS key, else `JwtSecret`. `ValidAlgorithms` pinned to HS256/ES256/RS256. `JwtSecret` now optional; config throws only if no key source at all. JWKS fetch failures reject the token (401 / `IsValid: false`) rather than 500
 - [x] Cross-site cookie SSO (v2.1.0, MVP) — `SessionEndpointExtensions.MapSondarrSessionEndpoints()` adds `POST /auth/session` (validates a Supabase access token, sets an HttpOnly/Secure/SameSite=Lax cookie scoped to `Supabase:Cookie:Domain`) and `POST /auth/logout` (clears it). `AddSupabaseAuthentication()` reads that cookie as a fallback when a request has no `Authorization` header (header always takes precedence when both are present) — any site under the shared parent domain authenticates automatically once one site has set the cookie. Access-token cookie only; no refresh-token cookie or `/auth/refresh` endpoint yet, so sessions end when the JWT expires (~1hr Supabase default)
+
+---
+
+## NuGet Publish Pipeline
+
+- [x] `.github/workflows/publish-nuget.yml` (added 2026-09-24, commit `9ed82ed`)
+  - Triggers: push of a `v*` tag (e.g. `v2.1.0` → package version `2.1.0`), or manual `workflow_dispatch` (uses `<Version>` from the `.csproj`)
+  - Steps: restore → build (Release) → test (all 51 must pass) → pack `Sondarr.Auth.Shared` only → push
+  - Feed: GitHub Packages, `https://nuget.pkg.github.com/Xerant/index.json`
+  - Auth: built-in `GITHUB_TOKEN` with `packages: write`, so no secret is needed; `--skip-duplicate` means re-pushing an existing version doesn't fail
+  - Build/test/pack steps verified locally 2026-09-24
+- [x] First release: `v2.1.0` published
+- [ ] Release `v2.2.0` (JWKS support) — required before any service adopts the package
+- [ ] Package visibility/access: grant each consuming repo read access (Package settings → Manage Actions access)
+- [ ] Consumers need a `nuget.config` for the GitHub Packages feed + a PAT with `read:packages` (local dev, Docker builds, DigitalOcean)
+
+### ⚠ v2.1.0 is HS256-only — do not adopt it
+
+The SondarrFoundation project's JWKS (checked 2026-09-24) publishes an **ES256** key, so v2.1.0 (single `SymmetricSecurityKey`) rejects ES256-signed tokens. Fixed in v2.2.0 (JWKS support, see above) — consumers should start at v2.2.0.
 
 ---
 
@@ -91,7 +112,8 @@ No open bugs currently tracked.
 
 - No `Dockerfile` for `Sondarr.Auth.Api`
 - No `docker-compose.yml`
-- No GitHub Actions workflow (NuGet publish to GitHub Packages, CI build/test) — package metadata is ready for this, pipeline itself not built
+- No `.gitignore` — 367 `bin/`/`obj/` build-output files are tracked in git; any local build dirties the working tree
+- No PR/push CI workflow (build + test on every push); only the tag-triggered publish workflow exists
 - No `dotnet user-secrets` documentation for local development
 
 ---
@@ -122,7 +144,12 @@ No open bugs currently tracked.
 - [ ] Add `/auth/refresh` + refresh-token cookie to make cross-site SSO sessions persistent past the access token's ~1hr expiry
 - [ ] Add RLS policies and enable RLS on `public.audit_logs`
 - [ ] Add `Dockerfile` for `Sondarr.Auth.Api`
-- [ ] Set up GitHub Actions: build + push `Sondarr.Auth.Shared` to GitHub Packages on tag
+- [x] Set up GitHub Actions: build + push `Sondarr.Auth.Shared` to GitHub Packages on tag — workflow committed 2026-09-24
+- [x] Push `v2.1.0` tag and verify the first publish
+- [x] Add JWKS (ES256/RS256) signing-key support to the package, matching SondarrMusic's `SupabaseJwksProvider`
+- [ ] Commit + tag `v2.2.0`
+- [ ] Add `.gitignore` and untrack `bin/`/`obj/`
+- [ ] Migrate SondarrMusic `StreamingService` then SondarrTicket onto the package (replace hand-rolled `AddJwtBearer`, unify config under `Supabase` section)
 - [ ] Move sensitive config to environment variables / `dotnet user-secrets`
 
 ---

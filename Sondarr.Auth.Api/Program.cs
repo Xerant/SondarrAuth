@@ -10,13 +10,6 @@ builder.Configuration
 .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
 .AddEnvironmentVariables();
 
-var jwtSecret = builder.Configuration["Supabase:JwtSecret"];
-if (string.IsNullOrEmpty(jwtSecret))
-{
-    throw new InvalidOperationException("CRITICAL ERROR: Supabase JWT Secret is not configured. Please check your settings.");
-}
-
-
 builder.Services.AddControllers();
 builder.Services.AddSupabaseAuthentication(builder.Configuration);
 builder.Services.AddSondarrAuthServices();

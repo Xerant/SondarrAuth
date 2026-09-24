@@ -20,6 +20,11 @@ dotnet add package Sondarr.Auth.Shared --source https://nuget.pkg.github.com/Xer
 }
 ```
 
+Signing keys are resolved per token, so both Supabase signing modes work (including mid-rotation):
+
+- **Asymmetric (ES256/RS256)** — public keys are fetched from the project's JWKS endpoint (`{Issuer}/.well-known/jwks.json`) and cached for an hour, refetched early when a token carries an unknown `kid`. Override the URL with `JwksUrl`, or set `Url` to the project URL.
+- **Legacy HS256** — verified with `JwtSecret`. Optional if the project only uses asymmetric keys.
+
 `Program.cs`:
 
 ```csharp
