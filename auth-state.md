@@ -11,10 +11,10 @@
 | --------------------------------- | -------------- | ------------------------------ |
 | `Sondarr.Auth.Shared` (NuGet lib) | 🟢 Functional  | v2.2.0 (unreleased) — adds JWKS/ES256 support; v2.1.0 published |
 | Supabase role claim wiring        | 🟢 Enabled     | Custom Access Token Hook live; `user_role` claim populated from `public.profiles.role` |
-| `Sondarr.Auth.Api` (utility API)  | 🟢 Functional  | validate-token implemented and tested |
+| `Sondarr.Auth.Api` (utility API)  | 🟢 Functional  | Not deployed — optional, nothing depends on it (see Deployment Model) |
 | Cross-site cookie SSO             | 🟢 MVP done    | Shared parent domain (`.sondarr.com`), access-token cookie only, tested |
 | NuGet publish pipeline            | 🟢 Working     | `.github/workflows/publish-nuget.yml` (`9ed82ed`); v2.1.0 published to GitHub Packages via tag |
-| Docker / container config         | 🔴 Not started | No Dockerfile or compose       |
+| Hosting                           | ✅ Not needed  | Library runs in-process in each service; no Docker (DigitalOcean moved to droplet + static site + web service) |
 | Consumer adoption                 | 🔴 Not started | No Sondarr service references the package yet (Music, Ticket still hand-roll `AddJwtBearer`) |
 | Test project                      | 🟢 Done        | `Sondarr.Auth.Shared.Tests` (57) + `Sondarr.Auth.Api.Tests` (6) — 63 xUnit tests, all passing |
 
@@ -52,11 +52,25 @@
 - [x] First release: `v2.1.0` published
 - [ ] Release `v2.2.0` (JWKS support) — required before any service adopts the package
 - [ ] Package visibility/access: grant each consuming repo read access (Package settings → Manage Actions access)
-- [ ] Consumers need a `nuget.config` for the GitHub Packages feed + a PAT with `read:packages` (local dev, Docker builds, DigitalOcean)
+- [x] Local dev PAT: classic token, `read:packages` only, registered as user-level source `github-xerant` (2026-09-24)
+- [ ] Each consuming repo needs a `nuget.config` for the GitHub Packages feed, and its build (DigitalOcean web service / GitHub Actions) needs a `read:packages` credential to restore
 
 ### ⚠ v2.1.0 is HS256-only — do not adopt it
 
 The SondarrFoundation project's JWKS (checked 2026-09-24) publishes an **ES256** key, so v2.1.0 (single `SymmetricSecurityKey`) rejects ES256-signed tokens. Fixed in v2.2.0 (JWKS support, see above) — consumers should start at v2.2.0.
+
+---
+
+## Deployment Model
+
+**Nothing auth-related needs to be hosted.** `Sondarr.Auth.Shared` is a library compiled into each backend service (SondarrMusic `StreamingService`, SondarrTicket, …) and runs in-process:
+
+- **Login / token issuance** — Supabase (frontends talk to Supabase Auth directly)
+- **Token validation** — inside each service's ASP.NET Core pipeline via `AddSupabaseAuthentication()`. HS256 uses the configured secret; ES256 fetches public keys straight from Supabase's JWKS endpoint (cached). No call to any Sondarr auth server
+- **Cross-site cookie SSO** — `MapSondarrSessionEndpoints()` is mounted by each service that wants `/auth/session` + `/auth/logout`; works as long as the sites share the parent domain set in `Supabase:Cookie:Domain`
+- **Roles** — come from the `user_role` claim in the JWT (Supabase Custom Access Token Hook), not a lookup
+
+`Sondarr.Auth.Api` is a standalone utility/demo API (`/api/auth/me`, `/roles`, `validate-token`). No Sondarr frontend or service calls it (checked 2026-09-24). Only deploy it if a non-.NET client ever needs a remote "is this token valid?" check.
 
 ---
 
@@ -110,8 +124,6 @@ No open bugs currently tracked.
 
 ### Missing Infrastructure
 
-- No `Dockerfile` for `Sondarr.Auth.Api`
-- No `docker-compose.yml`
 - No `.gitignore` — 367 `bin/`/`obj/` build-output files are tracked in git; any local build dirties the working tree
 - No PR/push CI workflow (build + test on every push); only the tag-triggered publish workflow exists
 - No `dotnet user-secrets` documentation for local development
@@ -131,7 +143,7 @@ No open bugs currently tracked.
 | App role claim integrity | ✅ Pass | `user_role` sourced server-side via Custom Access Token Hook (`supabase_auth_admin` only); not client-settable |
 | CORS locked to known origins | ⚠ Fail | `AllowAnyOrigin()` currently |
 | Secrets not committed | ✅ Pass | Verified — `appsettings*.json` contain only placeholder values |
-| SQL Server connection string | ⚠ Review | In `appsettings.Production.json` — should be env var in container |
+| SQL Server connection string | ⚠ Review | In `appsettings.Production.json` — should be an env var on the host |
 | Token revocation | ❌ Missing | No blocklist |
 | `validate-token` endpoint auth | ⚠ By design | Intentionally unauthenticated (utility endpoint per architecture) — lets a caller check if a captured token is currently valid without needing another protected resource. Doesn't leak anything beyond what possessing the JWT already reveals (JWT payloads are base64, not encrypted), but worth being deliberate about if this API is ever exposed outside the internal network |
 | `public.audit_logs` RLS | ❌ Fail | RLS disabled, exposed to `anon`/`authenticated` — not yet remediated |
@@ -143,7 +155,6 @@ No open bugs currently tracked.
 - [ ] Lock down CORS to explicit origin list (config-driven, not hardcoded) — **deliberately deferred**: still testing in preprod/live environments, will lock down once those origins are known
 - [ ] Add `/auth/refresh` + refresh-token cookie to make cross-site SSO sessions persistent past the access token's ~1hr expiry
 - [ ] Add RLS policies and enable RLS on `public.audit_logs`
-- [ ] Add `Dockerfile` for `Sondarr.Auth.Api`
 - [x] Set up GitHub Actions: build + push `Sondarr.Auth.Shared` to GitHub Packages on tag — workflow committed 2026-09-24
 - [x] Push `v2.1.0` tag and verify the first publish
 - [x] Add JWKS (ES256/RS256) signing-key support to the package, matching SondarrMusic's `SupabaseJwksProvider`
