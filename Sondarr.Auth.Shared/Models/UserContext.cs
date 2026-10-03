@@ -148,11 +148,27 @@ namespace Sondarr.Auth.Shared.Models
                 ClaimTypes.Role
             };
 
+            // A JSON array claim (e.g. Supabase's "amr" after MFA, one entry per sign-in
+            // method) arrives as one Claim per element with the same type, so group by type
+            // and rebuild the array rather than assume each type appears once.
             userContext.CustomClaims = claimsList
                 .Where(c => !standardClaimTypes.Contains(c.Type))
-                .ToDictionary(c => c.Type, c => ParseClaimValue(c.Value));
+                .GroupBy(c => c.Type)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Count() == 1 ? ParseClaimValue(g.First().Value) : ParseClaimValues(g.Select(c => c.Value)));
 
             return userContext;
+        }
+
+        /// <summary>
+        /// Combines the values of a repeated claim into one JSON array <see cref="JsonElement"/>,
+        /// parsing each value the same way as <see cref="ParseClaimValue(string)"/>.
+        /// </summary>
+        private static JsonElement ParseClaimValues(IEnumerable<string> values)
+        {
+            var items = values.Select(ParseClaimValue).ToList();
+            return JsonSerializer.SerializeToElement(items);
         }
 
         /// <summary>

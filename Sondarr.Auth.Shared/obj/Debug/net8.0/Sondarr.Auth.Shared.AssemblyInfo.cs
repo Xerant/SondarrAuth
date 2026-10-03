@@ -14,11 +14,11 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyDescriptionAttribute(("Shared authentication components for Sondarr microservices architecture with Supa" +
     "base JWT validation."))]
-[assembly: System.Reflection.AssemblyFileVersionAttribute("2.2.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("2.2.0+304dc7fbd1513990735aefce694245a79344f27c")]
+[assembly: System.Reflection.AssemblyFileVersionAttribute("2.2.1.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("2.2.1+2c0a7f1938b6cb7143a646cfa9c94871b4931497")]
 [assembly: System.Reflection.AssemblyProductAttribute("Sondarr.Auth.Shared")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Sondarr.Auth.Shared")]
-[assembly: System.Reflection.AssemblyVersionAttribute("2.2.0.0")]
+[assembly: System.Reflection.AssemblyVersionAttribute("2.2.1.0")]
 [assembly: System.Reflection.AssemblyMetadataAttribute("RepositoryUrl", "https://github.com/Xerant/SondarrAuth")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Sondarr.Auth.Shared.Tests")]
 

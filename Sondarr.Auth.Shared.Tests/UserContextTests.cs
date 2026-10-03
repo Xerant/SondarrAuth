@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Json;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Sondarr.Auth.Shared.Models;
 using Xunit;
 
@@ -73,6 +74,23 @@ public class UserContextTests
         Assert.Equal(JsonValueKind.Object, element.ValueKind);
         Assert.Equal("email", element.GetProperty("provider").GetString());
         Assert.Equal(3, element.GetProperty("count").GetInt32());
+    }
+
+    [Fact]
+    public void FromClaims_CombinesRepeatedClaimsIntoArray()
+    {
+        // Supabase "amr" after MFA: the JWT handler emits one claim per array element.
+        var token = new JsonWebTokenHandler().CreateToken(
+            "{\"sub\":\"user-123\",\"aal\":\"aal2\",\"amr\":[{\"method\":\"oauth\",\"timestamp\":1},{\"method\":\"totp\",\"timestamp\":2}]}");
+        var claims = new JsonWebTokenHandler().ReadJsonWebToken(token).Claims.ToList();
+        Assert.Equal(2, claims.Count(c => c.Type == "amr"));
+
+        var user = UserContext.FromClaims(claims);
+
+        var amr = Assert.IsType<JsonElement>(user.CustomClaims["amr"]);
+        Assert.Equal(JsonValueKind.Array, amr.ValueKind);
+        Assert.Equal(new[] { "oauth", "totp" }, amr.EnumerateArray().Select(e => e.GetProperty("method").GetString()));
+        Assert.Equal("aal2", user.CustomClaims["aal"]);
     }
 
     [Fact]
