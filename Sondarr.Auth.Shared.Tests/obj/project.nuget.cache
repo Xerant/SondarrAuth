@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "afM/XN1HILM=",
+  "dgSpecHash": "LIFxNieoIJE=",
   "success": true,
   "projectFilePath": "D:\\Projects\\Sondarr\\SondarrAuth\\Sondarr.Auth.Shared.Tests\\Sondarr.Auth.Shared.Tests.csproj",
   "expectedPackageFiles": [
@@ -35,6 +35,7 @@
     "C:\\Users\\n2102\\.nuget\\packages\\xunit.extensibility.core\\2.9.2\\xunit.extensibility.core.2.9.2.nupkg.sha512",
     "C:\\Users\\n2102\\.nuget\\packages\\xunit.extensibility.execution\\2.9.2\\xunit.extensibility.execution.2.9.2.nupkg.sha512",
     "C:\\Users\\n2102\\.nuget\\packages\\xunit.runner.visualstudio\\2.8.2\\xunit.runner.visualstudio.2.8.2.nupkg.sha512",
+    "C:\\Users\\n2102\\.nuget\\packages\\sondarr.auth.shared\\2.2.0\\sondarr.auth.shared.2.2.0.nupkg.sha512",
     "C:\\Users\\n2102\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.13\\microsoft.netcore.app.ref.8.0.13.nupkg.sha512",
     "C:\\Users\\n2102\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.13\\microsoft.windowsdesktop.app.ref.8.0.13.nupkg.sha512",
     "C:\\Users\\n2102\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.13\\microsoft.aspnetcore.app.ref.8.0.13.nupkg.sha512"

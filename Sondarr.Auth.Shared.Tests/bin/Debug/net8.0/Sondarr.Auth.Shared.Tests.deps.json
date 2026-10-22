@@ -10,7 +10,7 @@
         "dependencies": {
           "Microsoft.AspNetCore.TestHost": "8.0.0",
           "Microsoft.NET.Test.Sdk": "17.12.0",
-          "Sondarr.Auth.Shared": "2.1.0",
+          "Sondarr.Auth.Shared": "2.2.0",
           "coverlet.collector": "6.0.2",
           "xunit": "2.9.2",
           "xunit.runner.visualstudio": "2.8.2"
@@ -461,7 +461,7 @@
         }
       },
       "xunit.runner.visualstudio/2.8.2": {},
-      "Sondarr.Auth.Shared/2.1.0": {
+      "Sondarr.Auth.Shared/2.2.0": {
         "dependencies": {
           "Microsoft.AspNetCore.Authentication.JwtBearer": "8.0.0",
           "Microsoft.AspNetCore.Http.Abstractions": "2.2.0",
@@ -472,8 +472,8 @@
         },
         "runtime": {
           "Sondarr.Auth.Shared.dll": {
-            "assemblyVersion": "2.1.0.0",
-            "fileVersion": "2.1.0.0"
+            "assemblyVersion": "2.2.0.0",
+            "fileVersion": "2.2.0.0"
           }
         }
       }
@@ -702,7 +702,7 @@
       "path": "xunit.runner.visualstudio/2.8.2",
       "hashPath": "xunit.runner.visualstudio.2.8.2.nupkg.sha512"
     },
-    "Sondarr.Auth.Shared/2.1.0": {
+    "Sondarr.Auth.Shared/2.2.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

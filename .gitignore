@@ -1,0 +1,6 @@
+# Build output for the media package (the auth projects' bin/obj predate this file).
+Sondarr.Media.Shared/bin/
+Sondarr.Media.Shared/obj/
+Sondarr.Media.Shared.Tests/bin/
+Sondarr.Media.Shared.Tests/obj/
+artifacts/
